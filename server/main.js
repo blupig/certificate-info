@@ -15,6 +15,9 @@ server.listen(8000, '0.0.0.0', function(){
 
 // Handles only /url
 function handle_request(request, response){
+  // Allow request from extension
+  response.setHeader('Access-Control-Allow-Origin', '*');
+
   // Check arguments
   if (request.url.length < 7 || request.url.substring(0, 6) != '/?url=') {
     response.statusCode = 400;
