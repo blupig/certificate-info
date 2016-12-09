@@ -1,0 +1,28 @@
+{
+  "manifest_version": 2,
+
+  "name": "Cert Info",
+  "description": "This extension shows certificate information of the pages you visit.",
+  "version": "0.1",
+
+  "browser_action": {
+    "default_icon": "icon.png"
+  },
+
+  // "background": {
+  //   "persistent": false,
+  //   "scripts": ["cert-info.js"]
+  // },
+
+  "content_scripts": [
+    {
+      "matches": ["*://*/"],
+      "js": ["cert-info.js"]
+    }
+  ],
+
+  "permissions": [
+    "activeTab",
+    "https://api.blupig.net/*"
+  ]
+}
