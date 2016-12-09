@@ -9,20 +9,13 @@
     "default_icon": "icon.png"
   },
 
-  // "background": {
-  //   "persistent": false,
-  //   "scripts": ["cert-info.js"]
-  // },
-
-  "content_scripts": [
-    {
-      "matches": ["*://*/"],
-      "js": ["cert-info.js"]
-    }
-  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": true
+  },
 
   "permissions": [
-    "activeTab",
+    "tabs",
     "https://api.blupig.net/*"
   ]
 }
