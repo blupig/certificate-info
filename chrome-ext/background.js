@@ -19,7 +19,7 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 // Update badge text to validation level
 function badgeValidationLevel(url) {
   // Set badge if already cached
-  if (typeof cached_levels[url] !== 'undefined') {
+  if (typeof cached_levels['url'] !== 'undefined') {
     chrome.browserAction.setBadgeText({text: cached_levels[url][100]});
     return;
   }
@@ -28,8 +28,9 @@ function badgeValidationLevel(url) {
   var xhr = new XMLHttpRequest();
   xhr.onreadystatechange = function() {
       if (this.readyState == 4 && this.status == 200) {
-        var lvl = this.responseText;
-        cached_levels[url] = lvl;
+        var cert_info = JSON.parse(this.responseText);
+        var lvl = cert_info['validation_level'];
+        cached_levels['url'] = lvl;
         chrome.browserAction.setBadgeText({text: lvl[100]});
       }
   };
