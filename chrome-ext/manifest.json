@@ -15,7 +15,6 @@
   },
 
   "permissions": [
-    "tabs",
-    "https://api.blupig.net/*"
+    "tabs"
   ]
 }
