@@ -76,6 +76,6 @@ function badgeValidationLevel(url) {
     chrome.browserAction.setBadgeText({text: lvl});
   };
 
-  xhr.open("GET", "http://192.81.217.28/?hostname=" + encodeURIComponent(hostname), true);
+  xhr.open("GET", "https://api.blupig.net/chrome-cert-info/?hostname=" + encodeURIComponent(hostname), true);
   xhr.send();
 }

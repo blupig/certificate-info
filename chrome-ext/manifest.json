@@ -24,9 +24,9 @@
 {
   "manifest_version": 2,
 
-  "name": "Cert Level",
-  "description": "Shows certificate validation level of the pages you visit.",
-  "version": "0.1",
+  "name": "Certificate Level",
+  "description": "Shows TLS certificate validation level of the pages you visit.",
+  "version": "0.0.1",
 
   "browser_action": {
     "default_icon": "icon.png"

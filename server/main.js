@@ -35,20 +35,20 @@ server.listen(8000, '0.0.0.0', function(){
   console.log("Started listening...");
 });
 
-// Handles only /url
+// Handles only /chrome-cert-info/
 function handle_request(request, response){
   // Allow request from extension
   response.setHeader('Access-Control-Allow-Origin', '*');
 
   // Check arguments
-  if (request.url.length < 7 || request.url.substring(0, 11) != '/?hostname=') {
+  if (request.url.length < 29 || request.url.substring(0, 28) !== '/chrome-cert-info/?hostname=') {
     response.statusCode = 400;
     response.end('');
     return;
   }
 
   // Get hostname
-  var hostname = querystring.parse(request.url.substring(2))['hostname'];
+  var hostname = querystring.parse(request.url.substring(19))['hostname'];
 
   // Respond directly if found in cache
   if (typeof response_cache[hostname] !== 'undefined') {
