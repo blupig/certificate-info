@@ -1,3 +1,25 @@
+// MIT License
+//
+// Copyright (c) 2016 Yunzhu Li
+// https://github.com/yunzhu-li/chrome-cert-info
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 const http = require('http');
 const https = require('https');
@@ -19,16 +41,16 @@ function handle_request(request, response){
   response.setHeader('Access-Control-Allow-Origin', '*');
 
   // Check arguments
-  if (request.url.length < 7 || request.url.substring(0, 6) != '/?url=') {
+  if (request.url.length < 7 || request.url.substring(0, 11) != '/?hostname=') {
     response.statusCode = 400;
     response.end('');
     return;
   }
 
   // Get hostname
-  var target_url = querystring.parse(request.url.substring(2))['url'];
-  var hostname = url.parse(target_url).hostname;
+  var hostname = querystring.parse(request.url.substring(2))['hostname'];
 
+  // Respond directly if found in cache
   if (typeof response_cache[hostname] !== 'undefined') {
     finishResponse(response, response_cache[hostname]);
   } else {
@@ -51,23 +73,35 @@ function respond_with_cert_info(hostname, response) {
   };
 
   var req = https.request(options, function(res) {
+    // Get certificate information
     cert_info = res.connection.getPeerCertificate();
+    if (typeof cert_info === 'undefined' || !('subject' in cert_info)) {
+      finishResponse(response, '');
+      return;
+    }
 
     // Construct response
     response_obj = {};
     response_obj['all'] = cert_info;
 
+    // If "organization" field exists
     if (typeof cert_info['subject']['O'] !== 'undefined') {
       response_obj['validation_level'] = 'IV';
     } else {
       response_obj['validation_level'] = 'DV';
     }
 
+    // Serialize
     response_text = JSON.stringify(response_obj);
+
+    // Cache result
     response_cache[hostname] = response_text;
+
+    // Send back response
     finishResponse(response, response_text);
   });
 
+  // Handle timeout
   req.on('socket', function(socket) {
       socket.on('timeout', function() {
           req.abort();
@@ -75,6 +109,7 @@ function respond_with_cert_info(hostname, response) {
       });
   });
 
+  // Handle exceptions
   req.on('aborted', function() {
     finishResponse(response, '');
   });
@@ -83,5 +118,9 @@ function respond_with_cert_info(hostname, response) {
     finishResponse(response, '');
   });
 
+  // Do not keep connection
+  req.shouldKeepAlive = false
+
+  // Send request
   req.end();
 }
