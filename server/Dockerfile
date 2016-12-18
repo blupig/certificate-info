@@ -21,10 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-FROM node:alpine
-
-# Install bash for debugging
-RUN apk add --no-cache bash
+FROM node:7-alpine
 
 # Copy code
 COPY main.js /app/main.js
