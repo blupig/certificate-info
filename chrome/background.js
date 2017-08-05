@@ -16,29 +16,58 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-// Cache results
-var cached_levels = {};
+// Colors
+var badgeColors = {'...': '#757575', 'ERR': '#FF1744', 'DV': '#FF9800', 'IV': '#2196F3'}
+
+// Cache data
+var cachedData = {};
+
+// Current validation data
+var currentPageHTTPS = false;
+var currentCertInfo = null;
 
 // Update on activation
 chrome.tabs.onActivated.addListener(function(tabId, changeInfo, tab) {
   chrome.tabs.query({active: true}, function(tab) {
-    badgeValidationLevel(tab[0].url);
+    onURLUpdated(tab[0].url);
   });
 });
 
 // Update on content change
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
   chrome.tabs.query({active: true}, function(tab) {
-    badgeValidationLevel(tab[0].url);
+    onURLUpdated(tab[0].url);
   });
 });
 
-// Update badge text to validation level
-function badgeValidationLevel(url) {
-  // Check if https
-  if (url.substring(0, 8) !== 'https://') {
+// Update badge
+function updateBadge(text) {
+  // Clear badge
+  if (text == null) {
     chrome.browserAction.setBadgeText({text: ''});
     return;
+  }
+
+  // Default: gray
+  var color = '#757575'
+  if (text in badgeColors) {
+    color = badgeColors[text]
+  }
+
+  chrome.browserAction.setBadgeBackgroundColor({color: badgeColors[text]});
+  chrome.browserAction.setBadgeText({text: text});
+}
+
+// Fetch and display cert info
+function onURLUpdated(url) {
+  // Skip non-https urls
+  if (url.substring(0, 8) !== 'https://') {
+    currentPageHTTPS = false;
+    currentCertInfo = null;
+    updateBadge(null);
+    return;
+  } else {
+    currentPageHTTPS = true;
   }
 
   // Extract hostname
@@ -51,26 +80,69 @@ function badgeValidationLevel(url) {
   }
 
   // Set badge if already cached
-  if (typeof cached_levels[hostname] !== 'undefined') {
-    chrome.browserAction.setBadgeText({text: cached_levels[hostname]});
+  if (hostname in cachedData) {
+    displayCertInfo(cachedData[hostname])
     return;
   }
 
-  // Make request
+  // Fetch if not cached
+  // Temporarily disable popup
+  chrome.browserAction.setPopup({popup: ''});
+  updateBadge('...');
+  fetchCertInfo(hostname, function(data) {
+    // Enable popup
+    chrome.browserAction.setPopup({popup: 'popup.html'});
+    displayCertInfo(data);
+  })
+}
+
+// Display cert info
+function displayCertInfo(data) {
+  currentCertInfo = data;
+
+  // Failed to fetch data
+  if (data === null) {
+    updateBadge('ERR');
+    return;
+  }
+
+  // Certificate not validated
+  if (!('validation_level' in data)) {
+    updateBadge('ERR');
+    return;
+  }
+
+  updateBadge(data['validation_level_short']);
+}
+
+// Fetch cert info through API
+// Only hostname is sent
+function fetchCertInfo(hostname, callback) {
+  // Create XHR
   var xhr = new XMLHttpRequest();
   xhr.onreadystatechange = function() {
-    if (typeof this.responseText === 'undefined' ||
-        this.responseText.length === 0) {
-
-      chrome.browserAction.setBadgeText({text: ''});
+    // Only handle event when request is finished
+    if (xhr.readyState !== 4) {
       return;
     }
-    var cert_info = JSON.parse(this.responseText);
-    var lvl = cert_info['validation_level'];
-    cached_levels[hostname] = lvl;
-    chrome.browserAction.setBadgeText({text: lvl});
+
+    if (typeof this.responseText === 'undefined' || this.responseText.length === 0) {
+      callback(null);
+      return;
+    }
+
+    // Parse and cache response
+    try {
+      var cert_info = JSON.parse(this.responseText);
+      cachedData[hostname] = cert_info;
+      // Pass data back
+      callback(cert_info);
+    } catch(e) {
+      callback(null);
+    }
   };
 
-  xhr.open("GET", "https://api.blupig.net/certificate-info/cert?host=" + encodeURIComponent(hostname), true);
+  // Make request
+  xhr.open('GET', 'https://api.blupig.net/certificate-info/cert?host=' + encodeURIComponent(hostname), true);
   xhr.send();
 }

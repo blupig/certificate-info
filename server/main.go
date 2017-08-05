@@ -54,15 +54,26 @@ func certHandler(w http.ResponseWriter, r *http.Request) {
 	orgs := subj.Organization
 
 	// Default validation level
-	validationLevel := "DV"
+	validationLevel := "Domain Control Validated"
+	validationLevelShort := "DV"
+	certOrganization := ""
+	message := "The website operator's control over this domain has been validated."
 
 	// Set to IV if cert has O field
 	if len(orgs) > 0 {
-		validationLevel = "IV"
+		validationLevel = "Identity Validated"
+		validationLevelShort = "IV"
+		certOrganization = orgs[0]
+		message = "The website operator's identity (organization or individual) has been validated."
 	}
 
 	// Result object
-	result := map[string]string{"validation_level": validationLevel, "message": "ok"}
+	result := map[string]string{
+		"validation_level":       validationLevel,
+		"validation_level_short": validationLevelShort,
+		"organization":           certOrganization,
+		"message":                message,
+	}
 
 	// Marshal and write response
 	m, _ := json.Marshal(result)
