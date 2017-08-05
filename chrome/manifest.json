@@ -33,6 +33,7 @@
   },
 
   "permissions": [
-    "tabs"
+    "tabs",
+    "https://*.blupig.net/"
   ]
 }
