@@ -18,6 +18,7 @@ build/
 
 # Packaged extension
 *.crx
+certificate-info.zip
 
 # Signing key
 extension-key.pem
