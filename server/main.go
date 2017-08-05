@@ -42,8 +42,7 @@ func certHandler(w http.ResponseWriter, r *http.Request) {
 	// Create TLS connection
 	conn, err := tls.Dial("tcp", hostname+":443", nil)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "{\"message\":\""+err.Error()+"\"")
+		fmt.Fprint(w, "{\"message\":\"Failed to establish TLS connection: "+err.Error()+"\"}")
 		return
 	}
 	defer conn.Close()

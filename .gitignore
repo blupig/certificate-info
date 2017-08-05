@@ -16,5 +16,12 @@
 # Build directory
 build/
 
+# Packaged extension
+*.crx
+certificate-info.zip
+
+# Signing key
+extension-key.pem
+
 # macOS
 .DS_Store
