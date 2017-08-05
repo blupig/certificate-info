@@ -19,7 +19,7 @@
 {
   "manifest_version": 2,
 
-  "name": "Certificate Level",
+  "name": "Certificate Info",
   "description": "Shows TLS certificate validation level of the pages you visit.",
   "version": "0.0.1",
 

@@ -71,6 +71,6 @@ function badgeValidationLevel(url) {
     chrome.browserAction.setBadgeText({text: lvl});
   };
 
-  xhr.open("GET", "https://apps.yunzhu.li/chrome-cert-info/?hostname=" + encodeURIComponent(hostname), true);
+  xhr.open("GET", "https://api.blupig.net/certificate-info/cert?host=" + encodeURIComponent(hostname), true);
   xhr.send();
 }
