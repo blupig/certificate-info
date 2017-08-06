@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Certificate Info",
   "description": "Shows TLS certificate info and validation level of the servers you connect.",
-  "version": "0.0.3",
+  "version": "0.0.4",
 
   "icons": {
     "16": "icon_16.png",
