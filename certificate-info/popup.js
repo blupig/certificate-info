@@ -17,35 +17,44 @@
 //
 
 document.addEventListener('DOMContentLoaded', function () {
-  var page = chrome.extension.getBackgroundPage();
-  var certInfo = page.currentCertInfo;
-  var backgroundColors = page.badgeColors;
+  var background = chrome.extension.getBackgroundPage();
+  var backgroundColors = background.badgeColors;
+  var pageProtocol = background.currentPageProtocol;
+  var certInfo = background.currentCertInfo;
 
-  if (certInfo == null) {
-    if (page.currentPageHTTPS) {
-      // Data failed to fetch if HTTPS page and no data available
-      updateTitle(backgroundColors['ERR'], 'Data fetch error')
-    } else {
-      // Also no data if not HTTPS page
-      updateTitle('#757575', 'No HTTPS page loaded');
-      updateOrganization('');
-      updateMessage('Certificate information will display here when you open an HTTPS page.');
-    }
-    return;
-  }
-
-  // Check if certificate is validated
-  if (!('validation_level' in certInfo)) {
-    updateTitle(backgroundColors['ERR'], 'Not Validated');
+  // HTTP page
+  if (pageProtocol === 'http') {
+    updateTitle(backgroundColors['i'], 'HTTP Page')
     updateOrganization('');
-    updateMessage(certInfo['message']);
+    updateMessage('Data sent to / received from this site is transmitted in plaintext.');
     return;
   }
 
-  // Display info
-  updateTitle(backgroundColors[certInfo['validation_level_short']], certInfo['validation_level']);
-  updateOrganization(certInfo['organization']);
-  updateMessage(certInfo['message']);
+  // HTTPS page
+  if (pageProtocol === 'https') {
+    if (certInfo == null) {
+      // Data failed to fetch if HTTPS page and no data available
+      updateTitle(backgroundColors['!'], 'Data fetch error')
+    } else {
+      // Check if certificate is validated
+      if (!('validation_level' in certInfo)) {
+        updateTitle(backgroundColors['!'], 'Validation Failed');
+        updateOrganization('');
+        updateMessage(certInfo['message']);
+        return;
+      }
+
+      // Cert valid, display info
+      updateTitle(backgroundColors[certInfo['validation_level_short']], certInfo['validation_level']);
+      updateOrganization(certInfo['organization']);
+      updateMessage(certInfo['message']);
+    }
+  } else {
+    // Other pages
+    updateTitle('#757575', 'No HTTP(S) page loaded');
+    updateOrganization('');
+    updateMessage('Certificate information will display here when you open an HTTPS page.');
+  }
 });
 
 function updateTitle(color, text) {
