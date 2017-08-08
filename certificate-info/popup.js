@@ -18,40 +18,34 @@
 
 document.addEventListener('DOMContentLoaded', function () {
   var background = chrome.extension.getBackgroundPage();
-  var backgroundColors = background.badgeColors;
-  var pageProtocol = background.currentPageProtocol;
-  var certInfo = background.currentCertInfo;
+  var colors = background.colors;
+  var tabProtocol = background.currentTabProtocol;
+  var validationData = background.currentTabValidationData;
 
   // HTTP page
-  if (pageProtocol === 'http') {
-    updateTitle(backgroundColors['i'], 'HTTP Page')
+  if (tabProtocol === 'http') {
+    updateTitle(colors['orange'], 'HTTP Page')
     updateOrganization('');
     updateMessage('Data sent to / received from this site is transmitted in plaintext.');
     return;
   }
 
   // HTTPS page
-  if (pageProtocol === 'https') {
-    if (certInfo == null) {
+  if (tabProtocol === 'https') {
+    if (validationData == null) {
       // Data failed to fetch if HTTPS page and no data available
-      updateTitle(backgroundColors['!'], 'Data fetch error')
+      updateTitle(colors['red'], 'Data fetch error')
+      updateOrganization('');
+      updateMessage('Try reloading the page. Note that this extension only works with publicly accessible sites.');
     } else {
-      // Check if certificate is validated
-      if (!('validation_level' in certInfo)) {
-        updateTitle(backgroundColors['!'], 'Validation Failed');
-        updateOrganization('');
-        updateMessage(certInfo['message']);
-        return;
-      }
-
-      // Cert valid, display info
-      updateTitle(backgroundColors[certInfo['validation_level_short']], certInfo['validation_level']);
-      updateOrganization(certInfo['organization']);
-      updateMessage(certInfo['message']);
+      // Display info
+      updateTitle(colors[validationData['result_color']], validationData['validation_result']);
+      updateOrganization(validationData['cert_organization']);
+      updateMessage(validationData['message']);
     }
   } else {
     // Other pages
-    updateTitle('#757575', 'No HTTP(S) page loaded');
+    updateTitle(colors['gray'], 'No HTTP(S) page loaded');
     updateOrganization('');
     updateMessage('Certificate information will display here when you open an HTTPS page.');
   }

@@ -17,14 +17,14 @@
 //
 
 // Colors
-var badgeColors = {'...': '#757575', 'i': '#EF6C00', '!': '#FF1744', 'DV': '#FF9800', 'IV': '#2196F3'}
+var colors = {'': '#888', 'gray': '#888', 'red': '#FF1744', 'orange': '#EF6C00', 'yellow': '#FF9800', 'blue': '#2196F3'}
 
 // Cache data
 var cachedData = {};
 
 // Data of active tab, for popup
-var currentPageProtocol = '';
-var currentCertInfo = null;
+var currentTabProtocol = '';
+var currentTabValidationData = null;
 
 // Update all tabs on start
 updateAllTabs();
@@ -40,6 +40,10 @@ function updateAllTabs() {
 
 // Update on windows focus change
 chrome.windows.onFocusChanged.addListener(function(windowId) {
+  // Enable popup
+  // TODO: Improve this
+  chrome.browserAction.setPopup({popup: 'popup.html'});
+
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     updateTab(tabs[0], true);
   });
@@ -47,6 +51,10 @@ chrome.windows.onFocusChanged.addListener(function(windowId) {
 
 // Update on tab activation
 chrome.tabs.onActivated.addListener(function(activeInfo) {
+  // Enable popup
+  // TODO: Improve this
+  chrome.browserAction.setPopup({popup: 'popup.html'});
+
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     updateTab(tabs[0], true);
   });
@@ -84,7 +92,7 @@ function updateTab(tab, isActiveTab) {
 
   // Find out page protocol
   var proto = pageProtocol(url);
-  if (isActiveTab) currentPageProtocol = proto;
+  if (isActiveTab) currentTabProtocol = proto;
 
   if (proto === 'https') {
     // Extract hostname
@@ -98,76 +106,58 @@ function updateTab(tab, isActiveTab) {
 
     // Display data if already cached
     if (hostname in cachedData) {
-      if (isActiveTab) currentCertInfo = cachedData[hostname];
-      displayPageInfo(proto, cachedData[hostname], tabId)
+      if (isActiveTab) currentTabValidationData = cachedData[hostname];
+      displayPageInfo(tabId, proto, cachedData[hostname])
       return;
     }
 
     // Fetch if not cached
     // Temporarily disable popup
     chrome.browserAction.setPopup({popup: ''});
-    updateBadge('...', tabId);
+    updateBadge(tabId, 'gray', '...');
     fetchCertInfo(hostname, function(data) {
       // Enable popup
       chrome.browserAction.setPopup({popup: 'popup.html'});
 
-      if (isActiveTab) currentCertInfo = data;
-      displayPageInfo(proto, data, tabId);
+      if (isActiveTab) currentTabValidationData = data;
+      displayPageInfo(tabId, proto, data);
     })
     return;
   }
 
-  // All other protocols
-  displayPageInfo(proto, null, tabId);
+  // All other protocols (no validation data)
+  displayPageInfo(tabId, proto, null);
 }
 
 // Display page info
-function displayPageInfo(pageProtocol, certData, tabId) {
+function displayPageInfo(tabId, pageProtocol, validationData) {
   if (pageProtocol === 'http') {
     // Show warning for HTTP
-    updateBadge('i', tabId);
+    updateBadge(tabId, 'orange', 'i');
   } else if (pageProtocol === 'https') {
     // HTTPS
     // If failed to fetch data
-    if (certData === null) {
-      updateBadge('!', tabId);
+    if (validationData === null) {
+      updateBadge(tabId, 'red', '!');
       return;
     }
 
-    // If certificate not validated
-    if (!('validation_level' in certData)) {
-      updateBadge('!', tabId);
-      return;
-    }
-
-    // Validated cert, display level
-    updateBadge(certData['validation_level_short'], tabId);
+    // Display data
+    updateBadge(tabId, validationData['result_color'], validationData['validation_result_short']);
   } else {
     // Clear badge
-    updateBadge('', tabId);
+    updateBadge(tabId, '', '');
   }
 }
 
 // Update badge
-function updateBadge(text, tabId) {
+function updateBadge(tabId, color, text) {
   // Don't update if no tabId provided
   if (typeof tabId === 'undefined') {
     return;
   }
 
-  // Clear badge
-  if (text == null) {
-    chrome.browserAction.setBadgeText({text: '', tabId: tabId});
-    return;
-  }
-
-  // Default: gray
-  var color = '#757575'
-  if (text in badgeColors) {
-    color = badgeColors[text]
-  }
-
-  chrome.browserAction.setBadgeBackgroundColor({color: color, tabId: tabId});
+  chrome.browserAction.setBadgeBackgroundColor({color: colors[color], tabId: tabId});
   chrome.browserAction.setBadgeText({text: text, tabId: tabId});
 }
 
