@@ -18,40 +18,45 @@
 
 document.addEventListener('DOMContentLoaded', function () {
   var background = chrome.extension.getBackgroundPage();
-  var backgroundColors = background.badgeColors;
-  var pageProtocol = background.currentPageProtocol;
-  var certInfo = background.currentCertInfo;
+  var colors = background.colors;
+
+  var currentTabId = background.currentTabId;
+  var tabDataAvailable = background.tabDataAvailable[currentTabId];
+  var tabProtocol = background.tabProtocol[currentTabId];
+  var tabData = background.tabData[currentTabId];
+
+  // Check if data available
+  if (typeof tabDataAvailable === 'undefined' || tabDataAvailable === false) {
+    updateTitle(colors['gray'], 'Loading...')
+    updateOrganization('');
+    updateMessage('Loading validation data, try opening this popup again.');
+    return;
+  }
 
   // HTTP page
-  if (pageProtocol === 'http') {
-    updateTitle(backgroundColors['i'], 'HTTP Page')
+  if (tabProtocol === 'http') {
+    updateTitle(colors['orange'], 'HTTP Page')
     updateOrganization('');
     updateMessage('Data sent to / received from this site is transmitted in plaintext.');
     return;
   }
 
   // HTTPS page
-  if (pageProtocol === 'https') {
-    if (certInfo == null) {
+  if (tabProtocol === 'https') {
+    if (tabData === null) {
       // Data failed to fetch if HTTPS page and no data available
-      updateTitle(backgroundColors['!'], 'Data fetch error')
+      updateTitle(colors['red'], 'Data fetch error')
+      updateOrganization('');
+      updateMessage('Try reloading the page. Note that this extension only works with publicly accessible sites.');
     } else {
-      // Check if certificate is validated
-      if (!('validation_level' in certInfo)) {
-        updateTitle(backgroundColors['!'], 'Validation Failed');
-        updateOrganization('');
-        updateMessage(certInfo['message']);
-        return;
-      }
-
-      // Cert valid, display info
-      updateTitle(backgroundColors[certInfo['validation_level_short']], certInfo['validation_level']);
-      updateOrganization(certInfo['organization']);
-      updateMessage(certInfo['message']);
+      // Display info
+      updateTitle(colors[tabData['result_color']], tabData['validation_result']);
+      updateOrganization(tabData['cert_organization']);
+      updateMessage(tabData['message']);
     }
   } else {
     // Other pages
-    updateTitle('#757575', 'No HTTP(S) page loaded');
+    updateTitle(colors['gray'], 'No HTTP(S) page loaded');
     updateOrganization('');
     updateMessage('Certificate information will display here when you open an HTTPS page.');
   }

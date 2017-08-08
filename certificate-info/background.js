@@ -17,14 +17,13 @@
 //
 
 // Colors
-var badgeColors = {'...': '#757575', 'i': '#EF6C00', '!': '#FF1744', 'DV': '#FF9800', 'IV': '#2196F3'}
+var colors = {'': '#888', 'gray': '#888', 'red': '#FF1744', 'orange': '#EF6C00', 'yellow': '#FF9800', 'blue': '#2196F3'}
 
-// Cache data
-var cachedData = {};
-
-// Data of active tab, for popup
-var currentPageProtocol = '';
-var currentCertInfo = null;
+// In-memory data store
+var tabDataAvailable = {};
+var tabProtocol = {};
+var tabData = {};
+var currentTabId = 0;
 
 // Update all tabs on start
 updateAllTabs();
@@ -36,31 +35,32 @@ function updateAllTabs() {
       updateTab(tab[i], false);
     }
   });
+
+  // Update currentTabId
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    currentTabId = tabs[0].id;
+  });
 }
 
 // Update on windows focus change
 chrome.windows.onFocusChanged.addListener(function(windowId) {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    updateTab(tabs[0], true);
+    currentTabId = tabs[0].id;
+    updateTab(tabs[0]);
   });
 });
 
 // Update on tab activation
 chrome.tabs.onActivated.addListener(function(activeInfo) {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    updateTab(tabs[0], true);
+    currentTabId = tabs[0].id;
+    updateTab(tabs[0]);
   });
 });
 
 // Update on content change
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    if (tabs[0].id == tabId) {
-      updateTab(tab, true);
-    } else {
-      updateTab(tab, false);
-    }
-  });
+  updateTab(tab);
 });
 
 // Get connection protocol
@@ -75,7 +75,7 @@ function pageProtocol(url) {
 }
 
 // Fetch and display cert info for a tab
-function updateTab(tab, isActiveTab) {
+function updateTab(tab) {
   // Validate and get tab info
   if (typeof tab === 'undefined') return;
   var url = tab.url;
@@ -84,7 +84,7 @@ function updateTab(tab, isActiveTab) {
 
   // Find out page protocol
   var proto = pageProtocol(url);
-  if (isActiveTab) currentPageProtocol = proto;
+  tabProtocol[tabId] = proto;
 
   if (proto === 'https') {
     // Extract hostname
@@ -96,78 +96,58 @@ function updateTab(tab, isActiveTab) {
       }
     }
 
-    // Display data if already cached
-    if (hostname in cachedData) {
-      if (isActiveTab) currentCertInfo = cachedData[hostname];
-      displayPageInfo(proto, cachedData[hostname], tabId)
+    // Display data if already fetched
+    if (tabId in tabData) {
+      displayPageInfo(tabId, proto, tabData[tabId])
       return;
     }
 
-    // Fetch if not cached
-    // Temporarily disable popup
-    chrome.browserAction.setPopup({popup: ''});
-    updateBadge('...', tabId);
+    // Fetch
+    tabDataAvailable[tabId] = false;
+    updateBadge(tabId, 'gray', '...');
     fetchCertInfo(hostname, function(data) {
-      // Enable popup
-      chrome.browserAction.setPopup({popup: 'popup.html'});
-
-      if (isActiveTab) currentCertInfo = data;
-      displayPageInfo(proto, data, tabId);
+      // Store response
+      tabData[tabId] = data;
+      tabDataAvailable[tabId] = true;
+      displayPageInfo(tabId, proto, data);
     })
     return;
   }
 
-  // All other protocols
-  displayPageInfo(proto, null, tabId);
+  // All other protocols (no validation data)
+  tabDataAvailable[tabId] = true;
+  displayPageInfo(tabId, proto, null);
 }
 
 // Display page info
-function displayPageInfo(pageProtocol, certData, tabId) {
+function displayPageInfo(tabId, pageProtocol, validationData) {
   if (pageProtocol === 'http') {
     // Show warning for HTTP
-    updateBadge('i', tabId);
+    updateBadge(tabId, 'orange', 'i');
   } else if (pageProtocol === 'https') {
     // HTTPS
     // If failed to fetch data
-    if (certData === null) {
-      updateBadge('!', tabId);
+    if (validationData === null) {
+      updateBadge(tabId, 'red', '!');
       return;
     }
 
-    // If certificate not validated
-    if (!('validation_level' in certData)) {
-      updateBadge('!', tabId);
-      return;
-    }
-
-    // Validated cert, display level
-    updateBadge(certData['validation_level_short'], tabId);
+    // Display data
+    updateBadge(tabId, validationData['result_color'], validationData['validation_result_short']);
   } else {
     // Clear badge
-    updateBadge('', tabId);
+    updateBadge(tabId, '', '');
   }
 }
 
 // Update badge
-function updateBadge(text, tabId) {
+function updateBadge(tabId, color, text) {
   // Don't update if no tabId provided
   if (typeof tabId === 'undefined') {
     return;
   }
 
-  // Clear badge
-  if (text == null) {
-    chrome.browserAction.setBadgeText({text: '', tabId: tabId});
-    return;
-  }
-
-  // Default: gray
-  var color = '#757575'
-  if (text in badgeColors) {
-    color = badgeColors[text]
-  }
-
-  chrome.browserAction.setBadgeBackgroundColor({color: color, tabId: tabId});
+  chrome.browserAction.setBadgeBackgroundColor({color: colors[color], tabId: tabId});
   chrome.browserAction.setBadgeText({text: text, tabId: tabId});
 }
 
@@ -187,12 +167,10 @@ function fetchCertInfo(hostname, callback) {
       return;
     }
 
-    // Parse and cache response
+    // Parse
     try {
-      var cert_info = JSON.parse(this.responseText);
-      cachedData[hostname] = cert_info;
-      // Pass data back
-      callback(cert_info);
+      var validationData = JSON.parse(this.responseText);
+      callback(validationData);
     } catch(e) {
       callback(null);
     }
