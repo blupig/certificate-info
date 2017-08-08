@@ -20,9 +20,8 @@
 var colors = {'': '#888', 'gray': '#888', 'red': '#FF1744', 'orange': '#EF6C00', 'yellow': '#FF9800', 'blue': '#2196F3'}
 
 // In-memory data store
-var tabDataAvailable = {};
-var tabProtocol = {};
-var tabData = {};
+var cachedValidatonData = {};
+var popupData = {};
 var currentTabId = 0;
 
 // Update all tabs on start
@@ -45,8 +44,9 @@ function updateAllTabs() {
 // Update on windows focus change
 chrome.windows.onFocusChanged.addListener(function(windowId) {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    currentTabId = tabs[0].id;
-    updateTab(tabs[0]);
+    if (tabs.length > 0) {
+      currentTabId = tabs[0].id;
+    }
   });
 });
 
@@ -54,7 +54,6 @@ chrome.windows.onFocusChanged.addListener(function(windowId) {
 chrome.tabs.onActivated.addListener(function(activeInfo) {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     currentTabId = tabs[0].id;
-    updateTab(tabs[0]);
   });
 });
 
@@ -74,6 +73,19 @@ function pageProtocol(url) {
   }
 }
 
+// Get hostname
+function extractHostname(url) {
+    // Extract hostname
+    var hostname = url.substr(8, url.length - 1 - 8);
+    for (var i = 8, len = url.length; i < len; i++) {
+      if (url[i] === '/') {
+        hostname = url.substr(8, i - 8);
+        break;
+      }
+    }
+    return hostname;
+}
+
 // Fetch and display cert info for a tab
 function updateTab(tab) {
   // Validate and get tab info
@@ -84,71 +96,77 @@ function updateTab(tab) {
 
   // Find out page protocol
   var proto = pageProtocol(url);
-  tabProtocol[tabId] = proto;
 
   if (proto === 'https') {
-    // Extract hostname
-    var hostname = url.substr(8, url.length - 1 - 8);
-    for (var i = 8, len = url.length; i < len; i++) {
-      if (url[i] === '/') {
-        hostname = url.substr(8, i - 8);
-        break;
-      }
-    }
+    var hostname = extractHostname(url);
 
     // Display data if already fetched
-    if (tabId in tabData) {
-      displayPageInfo(tabId, proto, tabData[tabId])
+    if (hostname in cachedValidatonData) {
+      displayPageInfo(tabId, proto, false, cachedValidatonData[hostname])
       return;
     }
 
     // Fetch
-    tabDataAvailable[tabId] = false;
-    updateBadge(tabId, 'gray', '...');
+    displayPageInfo(tabId, proto, true, null);
     fetchCertInfo(hostname, function(data) {
       // Store response
-      tabData[tabId] = data;
-      tabDataAvailable[tabId] = true;
-      displayPageInfo(tabId, proto, data);
+      cachedValidatonData[hostname] = data;
+      displayPageInfo(tabId, proto, false, data);
     })
     return;
   }
 
-  // All other protocols (no validation data)
-  tabDataAvailable[tabId] = true;
-  displayPageInfo(tabId, proto, null);
+  displayPageInfo(tabId, proto, false, null);
 }
 
 // Display page info
-function displayPageInfo(tabId, pageProtocol, validationData) {
+function displayPageInfo(tabId, pageProtocol, loading, validationData) {
+  if (loading) {
+    updateBadge(tabId, 'gray', '...');
+    updatePopupData(tabId, 'gray', 'Loading...', '', 'Loading validation data, try opening this popup again.');
+    return;
+  }
+
   if (pageProtocol === 'http') {
     // Show warning for HTTP
     updateBadge(tabId, 'orange', 'i');
+    updatePopupData(tabId, 'orange', 'HTTP Page', '', 'Data sent to / received from this site is transmitted in plaintext.');
   } else if (pageProtocol === 'https') {
     // HTTPS
     // If failed to fetch data
     if (validationData === null) {
       updateBadge(tabId, 'red', '!');
+      updatePopupData(tabId, 'orange', 'Data fetch error', '', 'Try reloading the page. Note that this extension only works with publicly accessible sites.');
       return;
     }
-
     // Display data
     updateBadge(tabId, validationData['result_color'], validationData['validation_result_short']);
+    updatePopupData(tabId, validationData['result_color'], validationData['validation_result'], validationData['cert_organization'], validationData['message']);
   } else {
     // Clear badge
     updateBadge(tabId, '', '');
+    updatePopupData(tabId, 'gray', 'No HTTP(S) page loaded', '', 'Certificate information will display here when you open an HTTPS page.');
   }
 }
 
 // Update badge
-function updateBadge(tabId, color, text) {
+function updateBadge(tabId, colorName, text) {
   // Don't update if no tabId provided
   if (typeof tabId === 'undefined') {
     return;
   }
 
-  chrome.browserAction.setBadgeBackgroundColor({color: colors[color], tabId: tabId});
+  chrome.browserAction.setBadgeBackgroundColor({color: colors[colorName], tabId: tabId});
   chrome.browserAction.setBadgeText({text: text, tabId: tabId});
+}
+
+// Update popup data
+function updatePopupData(tabId, colorName, validationResult, certOrganization, message) {
+  popupData[tabId] = {};
+  popupData[tabId]['color'] = colors[colorName];
+  popupData[tabId]['validation_result'] = validationResult;
+  popupData[tabId]['cert_organization'] = certOrganization;
+  popupData[tabId]['message'] = message;
 }
 
 // Fetch cert info through API
