@@ -19,8 +19,19 @@
 document.addEventListener('DOMContentLoaded', function () {
   var background = chrome.extension.getBackgroundPage();
   var colors = background.colors;
-  var tabProtocol = background.currentTabProtocol;
-  var validationData = background.currentTabValidationData;
+
+  var currentTabId = background.currentTabId;
+  var tabDataAvailable = background.tabDataAvailable[currentTabId];
+  var tabProtocol = background.tabProtocol[currentTabId];
+  var tabData = background.tabData[currentTabId];
+
+  // Check if data available
+  if (typeof tabDataAvailable === 'undefined' || tabDataAvailable === false) {
+    updateTitle(colors['gray'], 'Loading...')
+    updateOrganization('');
+    updateMessage('Loading validation data, try opening this popup again.');
+    return;
+  }
 
   // HTTP page
   if (tabProtocol === 'http') {
@@ -32,16 +43,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // HTTPS page
   if (tabProtocol === 'https') {
-    if (validationData == null) {
+    if (tabData === null) {
       // Data failed to fetch if HTTPS page and no data available
       updateTitle(colors['red'], 'Data fetch error')
       updateOrganization('');
       updateMessage('Try reloading the page. Note that this extension only works with publicly accessible sites.');
     } else {
       // Display info
-      updateTitle(colors[validationData['result_color']], validationData['validation_result']);
-      updateOrganization(validationData['cert_organization']);
-      updateMessage(validationData['message']);
+      updateTitle(colors[tabData['result_color']], tabData['validation_result']);
+      updateOrganization(tabData['cert_organization']);
+      updateMessage(tabData['message']);
     }
   } else {
     // Other pages
