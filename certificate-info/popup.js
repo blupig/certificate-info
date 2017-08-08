@@ -18,59 +18,11 @@
 
 document.addEventListener('DOMContentLoaded', function () {
   var background = chrome.extension.getBackgroundPage();
-  var colors = background.colors;
-
   var currentTabId = background.currentTabId;
-  var tabDataAvailable = background.tabDataAvailable[currentTabId];
-  var tabProtocol = background.tabProtocol[currentTabId];
-  var tabData = background.tabData[currentTabId];
+  var popupData = background.popupData[currentTabId];
 
-  // Check if data available
-  if (typeof tabDataAvailable === 'undefined' || tabDataAvailable === false) {
-    updateTitle(colors['gray'], 'Loading...')
-    updateOrganization('');
-    updateMessage('Loading validation data, try opening this popup again.');
-    return;
-  }
-
-  // HTTP page
-  if (tabProtocol === 'http') {
-    updateTitle(colors['orange'], 'HTTP Page')
-    updateOrganization('');
-    updateMessage('Data sent to / received from this site is transmitted in plaintext.');
-    return;
-  }
-
-  // HTTPS page
-  if (tabProtocol === 'https') {
-    if (tabData === null) {
-      // Data failed to fetch if HTTPS page and no data available
-      updateTitle(colors['red'], 'Data fetch error')
-      updateOrganization('');
-      updateMessage('Try reloading the page. Note that this extension only works with publicly accessible sites.');
-    } else {
-      // Display info
-      updateTitle(colors[tabData['result_color']], tabData['validation_result']);
-      updateOrganization(tabData['cert_organization']);
-      updateMessage(tabData['message']);
-    }
-  } else {
-    // Other pages
-    updateTitle(colors['gray'], 'No HTTP(S) page loaded');
-    updateOrganization('');
-    updateMessage('Certificate information will display here when you open an HTTPS page.');
-  }
+  document.getElementById('lblValidationResult').style['background'] = popupData['color'];
+  document.getElementById('lblValidationResult').innerHTML = popupData['validation_result'];
+  document.getElementById('lblCertOrganization').innerHTML = '<b>' + popupData['cert_organization'] + '</b>';
+  document.getElementById('lblMessage').innerHTML = popupData['message'];
 });
-
-function updateTitle(color, text) {
-  document.getElementById('lblTitle').innerHTML = text;
-  document.getElementById('lblTitle').style['background'] = color;
-}
-
-function updateOrganization(text) {
-  document.getElementById('lblOrganization').innerHTML = '<b>' + text + '</b>';
-}
-
-function updateMessage(text) {
-  document.getElementById('lblMessage').innerHTML = text;
-}
