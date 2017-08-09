@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', function () {
   var currentTabId = background.currentTabId;
   var popupData = background.popupData[currentTabId];
 
+  if (typeof popupData === 'undefined') return;
+
   document.getElementById('lblValidationResult').style['background'] = popupData['color'];
   document.getElementById('lblValidationResult').innerHTML = popupData['validation_result'];
   document.getElementById('lblCertOrganization').innerHTML = '<b>' + popupData['cert_organization'] + '</b>';

@@ -150,9 +150,9 @@ function displayPageInfo(tabId, pageProtocol, loading, validationData) {
     updateBadge(tabId, validationData['result_color'], validationData['validation_result_short']);
     updatePopupData(tabId, validationData['result_color'], validationData['validation_result'], validationData['cert_organization'], validationData['message']);
   } else {
-    // Clear badge
+    // Clear badge and popup data
     updateBadge(tabId, '', '');
-    updatePopupData(tabId, 'gray', 'No HTTP(S) page loaded', '', 'Certificate information will display here when you open an HTTPS page.');
+    delete popupData[tabId];
   }
 }
 
