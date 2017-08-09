@@ -61,8 +61,8 @@ chrome.tabs.onActivated.addListener(function(activeInfo) {
 
 // Update on content change
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-  // Update tab only when URL changes
-  if ('url' in changeInfo) {
+  // Update tab only when tab status is 'loading'
+  if ('status' in changeInfo && changeInfo['status'] === 'loading') {
     updateTab(tab);
   }
 });
