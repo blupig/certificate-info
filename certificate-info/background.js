@@ -37,7 +37,9 @@ function updateAllTabs() {
 
   // Update currentTabId
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    currentTabId = tabs[0].id;
+    if (tabs.length > 0) {
+      currentTabId = tabs[0].id;
+    }
   });
 }
 
@@ -59,7 +61,10 @@ chrome.tabs.onActivated.addListener(function(activeInfo) {
 
 // Update on content change
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-  updateTab(tab);
+  // Update tab only when URL changes
+  if ('url' in changeInfo) {
+    updateTab(tab);
+  }
 });
 
 // Get connection protocol
@@ -110,7 +115,9 @@ function updateTab(tab) {
     displayPageInfo(tabId, proto, true, null);
     fetchCertInfo(hostname, function(data) {
       // Store response
-      cachedValidatonData[hostname] = data;
+      if (data !== null) {
+        cachedValidatonData[hostname] = data;
+      }
       displayPageInfo(tabId, proto, false, data);
     })
     return;
@@ -136,7 +143,7 @@ function displayPageInfo(tabId, pageProtocol, loading, validationData) {
     // If failed to fetch data
     if (validationData === null) {
       updateBadge(tabId, 'red', '!');
-      updatePopupData(tabId, 'orange', 'Data fetch error', '', 'Try reloading the page. Note that this extension only works with publicly accessible sites.');
+      updatePopupData(tabId, 'red', 'Data fetch error', '', 'Try reloading the page. Note that this extension only works with publicly accessible sites.');
       return;
     }
     // Display data
@@ -195,6 +202,6 @@ function fetchCertInfo(hostname, callback) {
   };
 
   // Make request
-  xhr.open('GET', 'https://api.blupig.net/certificate-info/cert?host=' + encodeURIComponent(hostname), true);
+  xhr.open('GET', 'https://api.blupig.net/certificate-info/validate?host=' + encodeURIComponent(hostname), true);
   xhr.send();
 }
