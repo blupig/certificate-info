@@ -18,13 +18,29 @@
 
 document.addEventListener('DOMContentLoaded', function () {
   var background = chrome.extension.getBackgroundPage();
+  var colors = background.colors;
   var currentTabId = background.currentTabId;
   var popupData = background.popupData[currentTabId];
 
   if (typeof popupData === 'undefined') return;
 
-  document.getElementById('lblValidationResult').style['background'] = popupData['color'];
+  document.getElementById('lblValidationResult').style['background'] = colors[popupData['result_color']];
   document.getElementById('lblValidationResult').innerHTML = popupData['validation_result'];
-  document.getElementById('lblCertOrganization').innerHTML = '<b>' + popupData['cert_organization'] + '</b>';
   document.getElementById('lblMessage').innerHTML = popupData['message'];
+
+  // Identity
+  if (popupData["subject_organization"].length > 0) {
+    document.getElementById('lblSubjectOrganization').innerHTML = 'Organization:<br><b>' + popupData['subject_organization'] + '</b>';
+  } else {
+    document.getElementById('lblSubjectOrganization').innerHTML = '';
+  }
+
+  // Issuer
+  if (popupData["issuer_common_name"].length > 0) {
+    document.getElementById('pIssuer').style['display'] = 'block';
+    document.getElementById('lblIssuerOrganization').innerHTML = '<b>' + popupData['issuer_organization'] + '</b>';
+    document.getElementById('lblIssuerCommonName').innerHTML = popupData['issuer_common_name'];
+  } else {
+    document.getElementById('pIssuer').style['display'] = 'none';
+  }
 });

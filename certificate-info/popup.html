@@ -5,25 +5,36 @@
     <style>
       body {
         color: #777;
-        width: 200px;
+        width: 240px;
         padding-top: 5px;
         padding-bottom: 5px;
         padding-left: 10px;
         padding-right: 10px;
         font-family: 'Roboto', arial, sans-serif;
         font-weight: 300;
+        font-size: 13px;
+        line-height: 150%;
       }
       .title-box {
         color: #FFF;
         background: #888;
         padding: 4px;
         border-radius: 4px;
-      };
+      }
+      .text-small {
+        font-size: 12px;
+        color: #878787;
+      }
     </style>
   </head>
   <body>
     <p><span id="lblValidationResult" class="title-box">No HTTP(S) page loaded</span></p>
-    <p style="margin-top: 18px;"><span id="lblCertOrganization"><b></b></span></p>
+    <p style="margin-top: 18px;"><span id="lblSubjectOrganization"><b></b></span></p>
+    <p id="pIssuer" style="display: none;">
+      <span>Issuer:</span><br />
+      <span id="lblIssuerOrganization"><b></b></span><br />
+      <span id="lblIssuerCommonName" class="text-small"></span><br />
+    </p>
     <p><span id="lblMessage">Certificate information will display here when you open an HTTPS page.</span></p>
   </body>
 </html>

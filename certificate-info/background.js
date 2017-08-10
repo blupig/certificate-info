@@ -65,6 +65,11 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
   if ('status' in changeInfo && changeInfo['status'] === 'loading') {
     updateTab(tab);
   }
+
+  // Also update on HTTPS error
+  if ('title' in changeInfo && changeInfo['title'] === 'Privacy error') {
+    updateTab(tab);
+  }
 });
 
 // Get connection protocol
@@ -130,25 +135,25 @@ function updateTab(tab) {
 function displayPageInfo(tabId, pageProtocol, loading, validationData) {
   if (loading) {
     updateBadge(tabId, 'gray', '...');
-    updatePopupData(tabId, 'gray', 'Loading...', '', 'Loading validation data, try opening this popup again.');
+    updatePopupData(tabId, null, 'gray', 'Loading...', 'Loading validation data, try opening this popup again.');
     return;
   }
 
   if (pageProtocol === 'http') {
     // Show warning for HTTP
     updateBadge(tabId, 'orange', 'i');
-    updatePopupData(tabId, 'orange', 'HTTP Page', '', 'Data sent to / received from this site is transmitted in plaintext.');
+    updatePopupData(tabId, null, 'orange', 'HTTP Page', 'Data sent to / received from this site is transmitted in plaintext.');
   } else if (pageProtocol === 'https') {
     // HTTPS
     // If failed to fetch data
     if (validationData === null) {
       updateBadge(tabId, 'red', '!');
-      updatePopupData(tabId, 'red', 'Data fetch error', '', 'Try reloading the page. Note that this extension only works with publicly accessible sites.');
+      updatePopupData(tabId, null, 'red', 'Data fetch error', 'Try reloading the page. Note that this extension only works with publicly accessible sites.');
       return;
     }
     // Display data
     updateBadge(tabId, validationData['result_color'], validationData['validation_result_short']);
-    updatePopupData(tabId, validationData['result_color'], validationData['validation_result'], validationData['cert_organization'], validationData['message']);
+    updatePopupData(tabId, validationData, null, null, null);
   } else {
     // Clear badge and popup data
     updateBadge(tabId, '', '');
@@ -168,12 +173,17 @@ function updateBadge(tabId, colorName, text) {
 }
 
 // Update popup data
-function updatePopupData(tabId, colorName, validationResult, certOrganization, message) {
-  popupData[tabId] = {};
-  popupData[tabId]['color'] = colors[colorName];
-  popupData[tabId]['validation_result'] = validationResult;
-  popupData[tabId]['cert_organization'] = certOrganization;
-  popupData[tabId]['message'] = message;
+function updatePopupData(tabId, data, colorName, validationResult, message) {
+  if (data !== null) {
+    popupData[tabId] = data;
+  } else {
+    popupData[tabId] = {};
+    popupData[tabId]['result_color'] = colorName;
+    popupData[tabId]['validation_result'] = validationResult;
+    popupData[tabId]['subject_organization'] = '';
+    popupData[tabId]['issuer_common_name'] = '';
+    popupData[tabId]['message'] = message;
+  }
 }
 
 // Fetch cert info through API
