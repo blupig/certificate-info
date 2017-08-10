@@ -20,6 +20,7 @@ package main
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -61,8 +62,11 @@ func validateHost(hostname string) map[string]string {
 	resultColor := ""
 	message := ""
 
-	// Cert info
-	certOrganization := ""
+	// Certs info
+	subjectCommonName := ""
+	subjectOrganization := ""
+	issuerCommonName := ""
+	issuerOrganization := ""
 
 	// Add port number if not already
 	if !strings.Contains(hostname, ":") {
@@ -79,27 +83,28 @@ func validateHost(hostname string) map[string]string {
 		validationResultShort = "!"
 		resultColor = "red"
 		message = err.Error()
-
 	} else {
 		defer conn.Close()
 
 		// Get certificate info
 		cert := conn.ConnectionState().PeerCertificates[0]
-		subj := cert.Subject
-		orgs := subj.Organization
+		certInfo := getCertInfo(cert)
 
-		// Default validation level
+		subjectCommonName = certInfo["subject_common_name"]
+		subjectOrganization = certInfo["subject_organization"]
+		issuerCommonName = certInfo["issuer_common_name"]
+		issuerOrganization = certInfo["issuer_organization"]
+
+		// Validation level set to default (DV)
 		validationResult = "Domain Control Validated"
 		validationResultShort = "DV"
-		certOrganization = ""
 		resultColor = "yellow"
 		message = "The website operator's control over this domain has been validated."
 
 		// Set to IV if cert has O field
-		if len(orgs) > 0 {
+		if len(certInfo["subject_organization"]) > 0 {
 			validationResult = "Identity Validated"
 			validationResultShort = "IV"
-			certOrganization = orgs[0]
 			resultColor = "blue"
 			message = "The website operator's identity (organization or individual) has been validated."
 		}
@@ -109,12 +114,47 @@ func validateHost(hostname string) map[string]string {
 	result := map[string]string{
 		"validation_result":       validationResult,
 		"validation_result_short": validationResultShort,
-		"validation_level":        validationResult,
-		"validation_level_short":  validationResultShort,
-		"cert_organization":       certOrganization,
-		"organization":            certOrganization,
+		"validation_level":        validationResult,      // Deprecated
+		"validation_level_short":  validationResultShort, // Deprecated
+		"cert_organization":       subjectOrganization,   // Deprecated
+		"organization":            subjectOrganization,   // Deprecated
+		"subject_common_name":     subjectCommonName,
+		"subject_organization":    subjectOrganization,
+		"issuer_common_name":      issuerCommonName,
+		"issuer_organization":     issuerOrganization,
 		"result_color":            resultColor,
 		"message":                 message,
+	}
+
+	return result
+}
+
+// Get cert info
+func getCertInfo(cert *x509.Certificate) map[string]string {
+	// Result object
+	result := map[string]string{
+		"subject_common_name":  "",
+		"subject_organization": "",
+		"issuer_common_name":   "",
+		"issuer_organization":  "",
+	}
+
+	subject := cert.Subject
+	subjectOrgs := subject.Organization
+	issuer := cert.Issuer
+	issuerOrgs := issuer.Organization
+
+	// Required fields
+	result["subject_common_name"] = subject.CommonName
+	result["issuer_common_name"] = issuer.CommonName
+
+	// Optional fields
+	if len(subjectOrgs) > 0 {
+		result["subject_organization"] = subjectOrgs[0]
+	}
+
+	if len(issuerOrgs) > 0 {
+		result["issuer_organization"] = issuerOrgs[0]
 	}
 
 	return result
