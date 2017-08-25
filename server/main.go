@@ -164,6 +164,7 @@ func validateHost(hostname string) map[string]string {
 	validationResult := ""
 	validationResultShort := ""
 	resultColor := ""
+	resultColorHex := ""
 	message := ""
 
 	// Certs info
@@ -187,6 +188,7 @@ func validateHost(hostname string) map[string]string {
 		validationResult = "Not Validated"
 		validationResultShort = "!"
 		resultColor = "red"
+		resultColorHex = "#FF1744"
 		message = err.Error()
 	} else {
 		defer conn.Close()
@@ -205,6 +207,7 @@ func validateHost(hostname string) map[string]string {
 		validationResult = "Domain Control Validated"
 		validationResultShort = "DV"
 		resultColor = "yellow"
+		resultColorHex = "#FF9800"
 		message = "The website operator's control over this domain has been validated."
 
 		// Set to IV if cert has O field
@@ -212,6 +215,7 @@ func validateHost(hostname string) map[string]string {
 			validationResult = "Identity Validated"
 			validationResultShort = "IV"
 			resultColor = "blue"
+			resultColorHex = "#2196F3"
 			message = "The website operator's identity (organization or individual) has been validated."
 		}
 
@@ -219,7 +223,9 @@ func validateHost(hostname string) map[string]string {
 		if len(subjectEVOID) > 0 {
 			validationResult = "Extended Validation"
 			validationResultShort = "EV"
-			resultColor = "green"
+			resultColor = "blue" // For compatibility reason
+			resultColorHex = "#00C853"
+			message = "The website operator's identity (organization) has been validated."
 		}
 	}
 
@@ -235,7 +241,8 @@ func validateHost(hostname string) map[string]string {
 		"subject_organization":    subjectOrganization,
 		"issuer_common_name":      issuerCommonName,
 		"issuer_organization":     issuerOrganization,
-		"result_color":            resultColor,
+		"result_color":            resultColor, // Deprecated
+		"result_color_hex":        resultColorHex,
 		"message":                 message,
 	}
 
@@ -271,7 +278,7 @@ func getCertInfo(cert *x509.Certificate) map[string]string {
 		result["issuer_organization"] = issuerOrgs[0]
 	}
 
-	// Check all OIDs to identify EV certificaetes
+	// Check all OIDs to identify EV certificates
 	for _, oid := range cert.PolicyIdentifiers {
 		// Construct OID string
 		var buf bytes.Buffer
