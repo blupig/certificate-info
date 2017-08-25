@@ -18,13 +18,12 @@
 
 document.addEventListener('DOMContentLoaded', function () {
   var background = chrome.extension.getBackgroundPage();
-  var colors = background.colors;
   var currentTabId = background.currentTabId;
   var popupData = background.popupData[currentTabId];
 
   if (typeof popupData === 'undefined') return;
 
-  document.getElementById('lblValidationResult').style['background'] = colors[popupData['result_color']];
+  document.getElementById('lblValidationResult').style['background'] = popupData['result_color_hex'];
   document.getElementById('lblValidationResult').innerHTML = popupData['validation_result'];
   document.getElementById('lblMessage').innerHTML = popupData['message'];
 

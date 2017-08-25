@@ -17,7 +17,7 @@
 //
 
 // Colors
-var colors = {'': '#888', 'gray': '#888', 'red': '#FF1744', 'orange': '#EF6C00', 'yellow': '#FF9800', 'blue': '#2196F3'}
+var colors = {'': '#888', 'gray': '#888', 'red': '#FF1744', 'orange': '#EF6C00'}
 
 // In-memory data store
 var cachedValidatonData = {};
@@ -134,25 +134,25 @@ function updateTab(tab) {
 // Display page info
 function displayPageInfo(tabId, pageProtocol, loading, validationData) {
   if (loading) {
-    updateBadge(tabId, 'gray', '...');
-    updatePopupData(tabId, null, 'gray', 'Loading...', 'Loading validation data, try opening this popup again.');
+    updateBadge(tabId, colors['gray'], '...');
+    updatePopupData(tabId, null, colors['gray'], 'Loading...', 'Loading validation data, try opening this popup again.');
     return;
   }
 
   if (pageProtocol === 'http') {
     // Show warning for HTTP
-    updateBadge(tabId, 'orange', 'i');
-    updatePopupData(tabId, null, 'orange', 'HTTP Page', 'Data sent to / received from this site is transmitted in plaintext.');
+    updateBadge(tabId, colors['orange'], 'i');
+    updatePopupData(tabId, null, colors['orange'], 'HTTP Page', 'Data sent to / received from this site is transmitted in plaintext.');
   } else if (pageProtocol === 'https') {
     // HTTPS
     // If failed to fetch data
     if (validationData === null) {
-      updateBadge(tabId, 'red', '!');
-      updatePopupData(tabId, null, 'red', 'Data fetch error', 'Try reloading the page. Note that this extension only works with publicly accessible sites.');
+      updateBadge(tabId, colors['red'], '!');
+      updatePopupData(tabId, null, colors['red'], 'Data fetch error', 'Try reloading the page. Note that this extension only works with publicly accessible sites.');
       return;
     }
     // Display data
-    updateBadge(tabId, validationData['result_color'], validationData['validation_result_short']);
+    updateBadge(tabId, validationData['result_color_hex'], validationData['validation_result_short']);
     updatePopupData(tabId, validationData, null, null, null);
   } else {
     // Clear badge and popup data
@@ -162,23 +162,23 @@ function displayPageInfo(tabId, pageProtocol, loading, validationData) {
 }
 
 // Update badge
-function updateBadge(tabId, colorName, text) {
+function updateBadge(tabId, color, text) {
   // Don't update if no tabId provided
   if (typeof tabId === 'undefined') {
     return;
   }
 
-  chrome.browserAction.setBadgeBackgroundColor({color: colors[colorName], tabId: tabId});
+  chrome.browserAction.setBadgeBackgroundColor({color: color, tabId: tabId});
   chrome.browserAction.setBadgeText({text: text, tabId: tabId});
 }
 
 // Update popup data
-function updatePopupData(tabId, data, colorName, validationResult, message) {
+function updatePopupData(tabId, data, color, validationResult, message) {
   if (data !== null) {
     popupData[tabId] = data;
   } else {
     popupData[tabId] = {};
-    popupData[tabId]['result_color'] = colorName;
+    popupData[tabId]['result_color_hex'] = color;
     popupData[tabId]['validation_result'] = validationResult;
     popupData[tabId]['subject_organization'] = '';
     popupData[tabId]['issuer_common_name'] = '';

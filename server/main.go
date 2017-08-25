@@ -224,7 +224,7 @@ func validateHost(hostname string) map[string]string {
 			validationResult = "Extended Validation"
 			validationResultShort = "EV"
 			resultColor = "blue" // For compatibility reason
-			resultColorHex = "#00C853"
+			resultColorHex = "#2CBE4E"
 			message = "The website operator's identity (organization) has been validated."
 		}
 	}
