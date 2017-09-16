@@ -135,8 +135,16 @@ var ev_oids = map[string]bool{
 	"2.16.840.1.114171.500.9": true,
 }
 
+// Cache validation response by hostname
+var validationResultCache map[string]string
+
 // rootHandler handles requests to /
 func rootHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/" {
+		http.NotFound(w, r)
+		return
+	}
+
 	fmt.Fprint(w, "certificate-info\nhttps://github.com/yunzhu-li/certificate-info")
 }
 
@@ -152,10 +160,21 @@ func validateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Marshal and write response
-	result := validateHost(hostname)
-	m, _ := json.Marshal(result)
-	fmt.Fprint(w, string(m))
+	result := ""
+
+	// Check cache
+	if v, ok := validationResultCache[hostname]; ok {
+		result = v
+	} else {
+		// Validate
+		resultMap := validateHost(hostname)
+		marshalled, _ := json.Marshal(resultMap)
+		result = string(marshalled)
+
+		// Cache response
+		validationResultCache[hostname] = result
+	}
+	fmt.Fprint(w, result)
 }
 
 // Validate host and return response
@@ -204,7 +223,7 @@ func validateHost(hostname string) map[string]string {
 		issuerOrganization = certInfo["issuer_organization"]
 
 		// Validation level set to default (DV)
-		validationResult = "Domain Control Validated"
+		validationResult = "Domain Control Validation"
 		validationResultShort = "DV"
 		resultColor = "yellow"
 		resultColorHex = "#FF9800"
@@ -212,11 +231,11 @@ func validateHost(hostname string) map[string]string {
 
 		// Set to IV if cert has O field
 		if len(certInfo["subject_organization"]) > 0 {
-			validationResult = "Identity Validated"
+			validationResult = "Identity Validation"
 			validationResultShort = "IV"
 			resultColor = "blue"
 			resultColorHex = "#2196F3"
-			message = "The website operator's identity (organization or individual) has been validated."
+			message = "The website operator's identity (individual or organization) has been validated."
 		}
 
 		// EV certificate
@@ -225,7 +244,7 @@ func validateHost(hostname string) map[string]string {
 			validationResultShort = "EV"
 			resultColor = "blue" // For compatibility reason
 			resultColorHex = "#2CBE4E"
-			message = "The website operator's identity (organization) has been validated."
+			message = "The website operator's identity (usually organization) has been validated."
 		}
 	}
 
@@ -304,6 +323,18 @@ func main() {
 	if port == "" {
 		port = "8000"
 	}
+
+	// Initialize cache
+	validationResultCache = make(map[string]string)
+
+	// Purge cache periodically
+	purgeTimer := time.NewTicker(time.Hour * 1)
+	go func() {
+		for {
+			<-purgeTimer.C
+			validationResultCache = make(map[string]string)
+		}
+	}()
 
 	// Routes
 	http.HandleFunc("/", rootHandler)
