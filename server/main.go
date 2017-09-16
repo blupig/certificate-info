@@ -328,7 +328,7 @@ func main() {
 	validationResultCache = make(map[string]string)
 
 	// Purge cache periodically
-	purgeTimer := time.NewTicker(time.Hour * 1)
+	purgeTimer := time.NewTicker(time.Hour * 8)
 	go func() {
 		for {
 			<-purgeTimer.C
