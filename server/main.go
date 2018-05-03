@@ -187,7 +187,6 @@ func validateHost(hostname string) map[string]string {
 	// Result
 	validationResult := ""
 	validationResultShort := ""
-	resultColor := ""
 	resultColorHex := ""
 	message := ""
 
@@ -211,7 +210,6 @@ func validateHost(hostname string) map[string]string {
 		// Connection failed
 		validationResult = "Not Validated"
 		validationResultShort = "!"
-		resultColor = "red"
 		resultColorHex = "#FF1744"
 		message = err.Error()
 	} else {
@@ -230,7 +228,6 @@ func validateHost(hostname string) map[string]string {
 		// Validation level set to default (DV)
 		validationResult = "Domain Control Validation"
 		validationResultShort = "DV"
-		resultColor = "yellow"
 		resultColorHex = "#FF9800"
 		message = "The website operator's control over this domain has been validated."
 
@@ -238,7 +235,6 @@ func validateHost(hostname string) map[string]string {
 		if len(certInfo["subject_organization"]) > 0 {
 			validationResult = "Identity Validation"
 			validationResultShort = "IV"
-			resultColor = "blue"
 			resultColorHex = "#2196F3"
 			message = "The website operator's identity (individual or organization) has been validated."
 		}
@@ -247,7 +243,6 @@ func validateHost(hostname string) map[string]string {
 		if len(subjectEVOID) > 0 {
 			validationResult = "Extended Validation"
 			validationResultShort = "EV"
-			resultColor = "blue" // For compatibility reason
 			resultColorHex = "#2CBE4E"
 			message = "The website operator's identity (usually organization) has been validated."
 		}
@@ -257,15 +252,10 @@ func validateHost(hostname string) map[string]string {
 	result := map[string]string{
 		"validation_result":       validationResult,
 		"validation_result_short": validationResultShort,
-		"validation_level":        validationResult,      // Deprecated
-		"validation_level_short":  validationResultShort, // Deprecated
-		"cert_organization":       subjectOrganization,   // Deprecated
-		"organization":            subjectOrganization,   // Deprecated
 		"subject_common_name":     subjectCommonName,
 		"subject_organization":    subjectOrganization,
 		"issuer_common_name":      issuerCommonName,
 		"issuer_organization":     issuerOrganization,
-		"result_color":            resultColor, // Deprecated
 		"result_color_hex":        resultColorHex,
 		"message":                 message,
 	}
