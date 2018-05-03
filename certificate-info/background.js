@@ -1,22 +1,20 @@
+// certificate-info
+// Copyright (C) 2017-2018 Yunzhu Li
 //
-//    certificate-info
-//    Copyright (C) 2017 Yunzhu Li
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Colors
+// Built-in colors
 var colors = {'': '#888', 'gray': '#888', 'red': '#FF1744', 'orange': '#EF6C00'}
 
 // In-memory data store
@@ -168,7 +166,9 @@ function updateBadge(tabId, color, text) {
     return;
   }
 
-  chrome.browserAction.setBadgeBackgroundColor({color: color, tabId: tabId});
+  if (color !== "") {
+    chrome.browserAction.setBadgeBackgroundColor({color: color, tabId: tabId});
+  }
   chrome.browserAction.setBadgeText({text: text, tabId: tabId});
 }
 
@@ -212,6 +212,7 @@ function fetchCertInfo(hostname, callback) {
   };
 
   // Make request
-  xhr.open('GET', 'https://api.blupig.net/certificate-info/validate?host=' + encodeURIComponent(hostname), true);
+  xhr.open('GET', 'https://api.blupig.net/certificate-info/validate', true);
+  xhr.setRequestHeader('x-validate-host', hostname);
   xhr.send();
 }
