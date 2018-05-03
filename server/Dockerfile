@@ -1,11 +1,26 @@
-# Minimum environment (can also be FROM scratch)
+# Build container
+FROM golang:alpine
+
+COPY . /go/src/github.com/blupig/certificate-info
+WORKDIR /go/src/github.com/blupig/certificate-info
+
+# Build application
+RUN go get -v .
+RUN CGO_ENABLED=0 GOOS=linux \
+    go build -o /go/bin/nmp -a \
+    -ldflags "-extldflags \"-static\""
+
+# Minimum runtime container (can also be FROM scratch)
 FROM alpine
 
-# Install ca-certificates
+# Install packages
 RUN apk add --no-cache ca-certificates
 
-# Copy built binary
-COPY build/cert-info /app/cert-info
+# Copy built binary from build container
+COPY --from=0 /go/bin/certificate-info /bin/certificate-info
+
+# Default environment
+ENV PORT="8000"
 
 # Default command
-CMD ["/app/cert-info"]
+CMD ["/bin/certificate-info"]

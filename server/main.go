@@ -1,20 +1,18 @@
-//
-//    certificate-info
-//    Copyright (C) 2017 Yunzhu Li
-//
-//    This program is free software: you can redistribute it and/or modify
-//    it under the terms of the GNU General Public License as published by
-//    the Free Software Foundation, either version 3 of the License, or
-//    (at your option) any later version.
-//
-//    This program is distributed in the hope that it will be useful,
-//    but WITHOUT ANY WARRANTY; without even the implied warranty of
-//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//    GNU General Public License for more details.
-//
-//    You should have received a copy of the GNU General Public License
-//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// certificate-info
+// Copyright (C) 2017-2018 Yunzhu Li
+
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package main
 
@@ -33,7 +31,7 @@ import (
 	"time"
 )
 
-var ev_oids = map[string]bool{
+var evOIDs = map[string]bool{
 	// Actalis
 	"1.3.159.1.17.1": true,
 
@@ -145,19 +143,26 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Fprint(w, "certificate-info\nhttps://github.com/yunzhu-li/certificate-info")
+	fmt.Fprint(w, "certificate-info\nhttps://github.com/blupig/certificate-info")
 }
 
-func healthHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "ok")
+func statusHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "ok\n")
 }
 
 func validateHandler(w http.ResponseWriter, r *http.Request) {
-	hostname := r.URL.Query().Get("host")
+	// Check header first
+	hostname := r.Header.Get("x-validate-host")
+
+	// Check query string if header is not set (for compatibility reasons)
+	// TODO: remove this
 	if len(hostname) == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "{\"message\":\"Invalid parameters\"}")
-		return
+		hostname = r.URL.Query().Get("host")
+		if len(hostname) == 0 {
+			w.WriteHeader(http.StatusBadRequest)
+			fmt.Fprint(w, "{\"message\":\"Invalid parameters\"}")
+			return
+		}
 	}
 
 	result := ""
@@ -308,7 +313,7 @@ func getCertInfo(cert *x509.Certificate) map[string]string {
 			}
 		}
 		oidString := buf.String()
-		if ev_oids[oidString] {
+		if evOIDs[oidString] {
 			result["subject_ev_oid"] = oidString
 		}
 	}
@@ -338,8 +343,7 @@ func main() {
 
 	// Routes
 	http.HandleFunc("/", rootHandler)
-	http.HandleFunc("/health", healthHandler)
-	http.HandleFunc("/cert", validateHandler)
+	http.HandleFunc("/status", statusHandler)
 	http.HandleFunc("/validate", validateHandler)
 
 	// Start serving

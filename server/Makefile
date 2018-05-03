@@ -1,6 +1,9 @@
 all:
-	@CGO_ENABLED=0 GOOS=linux go build -o build/cert-info -a -ldflags '-extldflags "-static"' .
-	@docker build -t yunzhu/certificate-info .
+	@go build main.go
 
-push:
-	@docker push yunzhu/certificate-info
+run:
+	@go run main.go
+
+docker-push:
+	@docker build -t blupig/certificate-info .
+	@docker push blupig/certificate-info
