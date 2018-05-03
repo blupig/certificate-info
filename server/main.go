@@ -313,6 +313,9 @@ func getCertInfo(cert *x509.Certificate) map[string]string {
 
 // Application entry point
 func main() {
+	// Log to stdout
+	log.SetOutput(os.Stdout)
+
 	// Configuration
 	port := os.Getenv("PORT")
 	if port == "" {
