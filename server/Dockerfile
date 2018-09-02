@@ -7,7 +7,7 @@ WORKDIR /go/src/github.com/blupig/certificate-info
 # Build application
 RUN go get -v .
 RUN CGO_ENABLED=0 GOOS=linux \
-    go build -o /go/bin/nmp -a \
+    go build -o /go/bin/certificate-info -a \
     -ldflags "-extldflags \"-static\""
 
 # Minimum runtime container (can also be FROM scratch)
