@@ -160,6 +160,7 @@ func validateHandler(w http.ResponseWriter, r *http.Request) {
 		hostname = r.URL.Query().Get("host")
 		if len(hostname) == 0 {
 			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprint(w, "{\"message\":\"Invalid parameters\"}")
 			return
 		}
@@ -179,6 +180,7 @@ func validateHandler(w http.ResponseWriter, r *http.Request) {
 		// Cache response
 		validationResultCache[hostname] = result
 	}
+	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, result)
 }
 
@@ -196,6 +198,7 @@ func validateHost(hostname string) map[string]string {
 	subjectEVOID := ""
 	issuerCommonName := ""
 	issuerOrganization := ""
+	not_after := ""
 
 	// Add port number if not already
 	if !strings.Contains(hostname, ":") {
@@ -224,6 +227,7 @@ func validateHost(hostname string) map[string]string {
 		subjectEVOID = certInfo["subject_ev_oid"]
 		issuerCommonName = certInfo["issuer_common_name"]
 		issuerOrganization = certInfo["issuer_organization"]
+		not_after = certInfo["not_after"]
 
 		// Validation level set to default (DV)
 		validationResult = "Domain Control Validation"
@@ -257,6 +261,7 @@ func validateHost(hostname string) map[string]string {
 		"issuer_common_name":      issuerCommonName,
 		"issuer_organization":     issuerOrganization,
 		"result_color_hex":        resultColorHex,
+		"not_after":               not_after,
 		"message":                 message,
 	}
 
