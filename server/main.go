@@ -272,6 +272,7 @@ func getCertInfo(cert *x509.Certificate) map[string]string {
 		"subject_ev_oid":       "",
 		"issuer_common_name":   "",
 		"issuer_organization":  "",
+		"not_after":            "",
 	}
 
 	subject := cert.Subject
@@ -282,6 +283,7 @@ func getCertInfo(cert *x509.Certificate) map[string]string {
 	// Required fields
 	result["subject_common_name"] = subject.CommonName
 	result["issuer_common_name"] = issuer.CommonName
+	result["not_after"] = cert.NotAfter.Format(time.RFC3339)
 
 	// Optional fields
 	if len(subjectOrgs) > 0 {
