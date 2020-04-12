@@ -40,4 +40,34 @@ document.addEventListener('DOMContentLoaded', function () {
   } else {
     document.getElementById('pIssuer').style['display'] = 'none';
   }
+
+    // Expiration
+    if (typeof(popupData["not_after"]) !== 'undefined' && popupData["not_after"].length > 0) {
+
+      const one_day=1000*60*60*24;
+      const error_threshold_days = 14;      // number of days before certificate management is a FIRE
+      const warning_threshold_days = 45;    // number of days before certificate management is a WARNING
+
+      var not_after = new Date(popupData["not_after"]);
+      var now = Date.now();
+
+      var daysUntilExpiration = Math.floor((not_after - now) / one_day);
+
+      // display the certification expiration date
+      document.getElementById('lblExpiration').innerHTML = 'Expiration: ' + not_after;
+
+      if (daysUntilExpiration <= 0) {
+        document.getElementById('lblExpirationMsg').innerHTML = '<b class="ExpirationError">Certificate Expired</b>';
+          // expired
+      } else if (daysUntilExpiration <= error_threshold_days) {
+        document.getElementById('lblExpirationMsg').innerHTML = '<b class="ExpirationError">Certificate will expire in '+daysUntilExpiration+' day(s)</b>';
+      } else if (daysUntilExpiration <= warning_threshold_days) {
+        document.getElementById('lblExpirationMsg').innerHTML = '<b class="ExpirationWarning">Certificate will expire in '+daysUntilExpiration+' day(s)</b>';
+      } else {
+        document.getElementById('lblExpirationMsg').innerHTML = '<b>Certificate will expire in '+daysUntilExpiration+' day(s)</b>';
+      }
+    } else {
+      document.getElementById('lblExpiration').innerHTML = 'Unknown ';
+      document.getElementById('lblExpirationMsg').style['display'] = 'none';
+    }
 });

@@ -182,6 +182,7 @@ function updatePopupData(tabId, data, color, validationResult, message) {
     popupData[tabId]['validation_result'] = validationResult;
     popupData[tabId]['subject_organization'] = '';
     popupData[tabId]['issuer_common_name'] = '';
+    popupData[tabId]['not_after'] = '';
     popupData[tabId]['message'] = message;
   }
 }
