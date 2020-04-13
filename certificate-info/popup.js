@@ -41,33 +41,31 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('pIssuer').style['display'] = 'none';
   }
 
-    // Expiration
-    if (typeof(popupData["not_after"]) !== 'undefined' && popupData["not_after"].length > 0) {
+  // Expiration
+  if (typeof (popupData["not_after"]) !== 'undefined' && popupData["not_after"].length > 0) {
 
-      const one_day=1000*60*60*24;
-      const error_threshold_days = 14;      // number of days before certificate management is a FIRE
-      const warning_threshold_days = 45;    // number of days before certificate management is a WARNING
+    var not_after = new Date(popupData['not_after']);
 
-      var not_after = new Date(popupData["not_after"]);
-      var now = Date.now();
+    var expiration_days_until = popupData['expiration_days_until'];
+    var expiration_class = popupData['expiration_class'];
 
-      var daysUntilExpiration = Math.floor((not_after - now) / one_day);
+    // display the certification expiration date with a tooltip
+    document.getElementById('lblExpirationDate').innerHTML =
+      '<div class="tooltip">' +
+      not_after.toLocaleDateString() +
+      '<span class="tooltiptext">' + not_after + '</span>' +
+      '</div>'
 
-      // display the certification expiration date
-      document.getElementById('lblExpiration').innerHTML = 'Expiration: ' + not_after;
-
-      if (daysUntilExpiration <= 0) {
-        document.getElementById('lblExpirationMsg').innerHTML = '<b class="ExpirationError">Certificate Expired</b>';
-          // expired
-      } else if (daysUntilExpiration <= error_threshold_days) {
-        document.getElementById('lblExpirationMsg').innerHTML = '<b class="ExpirationError">Certificate will expire in '+daysUntilExpiration+' day(s)</b>';
-      } else if (daysUntilExpiration <= warning_threshold_days) {
-        document.getElementById('lblExpirationMsg').innerHTML = '<b class="ExpirationWarning">Certificate will expire in '+daysUntilExpiration+' day(s)</b>';
-      } else {
-        document.getElementById('lblExpirationMsg').innerHTML = '<b>Certificate will expire in '+daysUntilExpiration+' day(s)</b>';
-      }
+    // display detail about how many days until expiration, all in appropriate styling based on days until expiration
+    if (expiration_days_until <= 0) {
+      document.getElementById('lblExpirationMessage').innerHTML = '<b class="ExpirationError">Certificate Expired</b>';
+      // expired
     } else {
-      document.getElementById('lblExpiration').innerHTML = 'Unknown ';
-      document.getElementById('lblExpirationMsg').style['display'] = 'none';
+      document.getElementById('lblExpirationMessage').innerHTML = '<b class="' + expiration_class + '">Certificate will expire in ' + expiration_days_until + ' day(s)</b>';
     }
+  } else {
+    // An error occurred when trying to get certificate information
+    document.getElementById('lblExpirationDate').innerHTML = '<span class="ExpirationError">Unknown</span>';
+    document.getElementById('lblExpirationMessage').style['display'] = 'none';
+  }
 });
