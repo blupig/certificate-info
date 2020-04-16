@@ -198,7 +198,7 @@ func validateHost(hostname string) map[string]string {
 	subjectEVOID := ""
 	issuerCommonName := ""
 	issuerOrganization := ""
-	not_after := ""
+	notAfter := ""
 
 	// Add port number if not already
 	if !strings.Contains(hostname, ":") {
@@ -227,7 +227,7 @@ func validateHost(hostname string) map[string]string {
 		subjectEVOID = certInfo["subject_ev_oid"]
 		issuerCommonName = certInfo["issuer_common_name"]
 		issuerOrganization = certInfo["issuer_organization"]
-		not_after = certInfo["not_after"]
+		notAfter = certInfo["not_after"]
 
 		// Validation level set to default (DV)
 		validationResult = "Domain Control Validation"
@@ -261,7 +261,7 @@ func validateHost(hostname string) map[string]string {
 		"issuer_common_name":      issuerCommonName,
 		"issuer_organization":     issuerOrganization,
 		"result_color_hex":        resultColorHex,
-		"not_after":               not_after,
+		"not_after":               notAfter,
 		"message":                 message,
 	}
 

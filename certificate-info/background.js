@@ -195,11 +195,11 @@ function updatePopupData(tabId, data, color, validationResult, message) {
     popupData[tabId]['expiration_class'] = '';
 
     // extrapolate some expiration data
-    var not_after = new Date(popupData[tabId]['not_after']);
-    if (not_after.getTime() === not_after.getTime()) {  // date validity
+    var notAfter = new Date(popupData[tabId]['not_after']);
+    if (notAfter.getTime() === notAfter.getTime()) {  // date validity
       var now = Date.now();
 
-      var expiration_days_until = Math.floor((not_after - now) / oneDay);
+      var expiration_days_until = Math.floor((notAfter - now) / oneDay);
       popupData[tabId]['expiration_days_until'] = expiration_days_until;
 
       // map days until expiration to actual CSS classes

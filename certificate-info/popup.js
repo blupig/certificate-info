@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Expiration
   if (typeof (popupData["not_after"]) !== 'undefined' && popupData["not_after"].length > 0) {
 
-    var not_after = new Date(popupData['not_after']);
+    var notAfter = new Date(popupData['not_after']);
 
     var expiration_days_until = popupData['expiration_days_until'];
     var expiration_class = popupData['expiration_class'];
@@ -52,8 +52,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // display the certification expiration date with a tooltip
     document.getElementById('lblExpirationDate').innerHTML =
       '<div class="tooltip">' +
-      not_after.toLocaleDateString() +
-      '<span class="tooltiptext">' + not_after + '</span>' +
+      notAfter.toLocaleDateString() +
+      '<span class="tooltiptext">' + notAfter + '</span>' +
       '</div>'
 
     // display detail about how many days until expiration, all in appropriate styling based on days until expiration
