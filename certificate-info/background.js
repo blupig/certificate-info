@@ -23,9 +23,9 @@ var popupData = {};
 var currentTabId = 0;
 
 // constants around expiration
-const one_day = 1000 * 60 * 60 * 24;
-const expiration_error_threshold_days = 14;      // number of days before certificate management is an ERROR
-const expiration_warning_threshold_days = 45;    // number of days before certificate management is a WARNING
+const oneDay = 1000 * 60 * 60 * 24;
+const expirationErrorThresholdDays = 14;      // number of days before certificate management is an ERROR
+const expirationWarningThresholdDays = 29;    // number of days before certificate management is a WARNING
 
 // Update all tabs on start
 updateAllTabs();
@@ -199,13 +199,13 @@ function updatePopupData(tabId, data, color, validationResult, message) {
     if (not_after.getTime() === not_after.getTime()) {  // date validity
       var now = Date.now();
 
-      var expiration_days_until = Math.floor((not_after - now) / one_day);
+      var expiration_days_until = Math.floor((not_after - now) / oneDay);
       popupData[tabId]['expiration_days_until'] = expiration_days_until;
 
       // map days until expiration to actual CSS classes
-      if (expiration_days_until <= expiration_error_threshold_days) {
+      if (expiration_days_until <= expirationErrorThresholdDays) {
         popupData[tabId]['expiration_class'] = 'ExpirationError';
-      } else if (expiration_days_until <= expiration_warning_threshold_days) {
+      } else if (expiration_days_until <= expirationWarningThresholdDays) {
         popupData[tabId]['expiration_class'] = 'ExpirationWarning';
       } 
     }
