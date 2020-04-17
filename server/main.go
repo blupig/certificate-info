@@ -160,6 +160,7 @@ func validateHandler(w http.ResponseWriter, r *http.Request) {
 		hostname = r.URL.Query().Get("host")
 		if len(hostname) == 0 {
 			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprint(w, "{\"message\":\"Invalid parameters\"}")
 			return
 		}
@@ -179,6 +180,7 @@ func validateHandler(w http.ResponseWriter, r *http.Request) {
 		// Cache response
 		validationResultCache[hostname] = result
 	}
+	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, result)
 }
 
@@ -196,6 +198,7 @@ func validateHost(hostname string) map[string]string {
 	subjectEVOID := ""
 	issuerCommonName := ""
 	issuerOrganization := ""
+	notAfter := ""
 
 	// Add port number if not already
 	if !strings.Contains(hostname, ":") {
@@ -224,6 +227,7 @@ func validateHost(hostname string) map[string]string {
 		subjectEVOID = certInfo["subject_ev_oid"]
 		issuerCommonName = certInfo["issuer_common_name"]
 		issuerOrganization = certInfo["issuer_organization"]
+		notAfter = certInfo["not_after"]
 
 		// Validation level set to default (DV)
 		validationResult = "Domain Control Validation"
@@ -257,6 +261,7 @@ func validateHost(hostname string) map[string]string {
 		"issuer_common_name":      issuerCommonName,
 		"issuer_organization":     issuerOrganization,
 		"result_color_hex":        resultColorHex,
+		"not_after":               notAfter,
 		"message":                 message,
 	}
 
@@ -272,6 +277,7 @@ func getCertInfo(cert *x509.Certificate) map[string]string {
 		"subject_ev_oid":       "",
 		"issuer_common_name":   "",
 		"issuer_organization":  "",
+		"not_after":            "",
 	}
 
 	subject := cert.Subject
@@ -282,6 +288,7 @@ func getCertInfo(cert *x509.Certificate) map[string]string {
 	// Required fields
 	result["subject_common_name"] = subject.CommonName
 	result["issuer_common_name"] = issuer.CommonName
+	result["not_after"] = cert.NotAfter.Format(time.RFC3339)
 
 	// Optional fields
 	if len(subjectOrgs) > 0 {

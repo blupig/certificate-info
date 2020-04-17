@@ -40,4 +40,32 @@ document.addEventListener('DOMContentLoaded', function () {
   } else {
     document.getElementById('pIssuer').style['display'] = 'none';
   }
+
+  // Expiration
+  if (typeof (popupData["not_after"]) !== 'undefined' && popupData["not_after"].length > 0) {
+
+    var notAfter = new Date(popupData['not_after']);
+
+    var expiration_days_until = popupData['expiration_days_until'];
+    var expiration_class = popupData['expiration_class'];
+
+    // display the certification expiration date with a tooltip
+    document.getElementById('lblExpirationDate').innerHTML =
+      '<div class="tooltip">' +
+      notAfter.toLocaleDateString() +
+      '<span class="tooltiptext">' + notAfter + '</span>' +
+      '</div>'
+
+    // display detail about how many days until expiration, all in appropriate styling based on days until expiration
+    if (expiration_days_until <= 0) {
+      document.getElementById('lblExpirationMessage').innerHTML = '<b class="ExpirationError">Certificate Expired</b>';
+      // expired
+    } else {
+      document.getElementById('lblExpirationMessage').innerHTML = '<b class="' + expiration_class + '">Certificate will expire in ' + expiration_days_until + ' day(s)</b>';
+    }
+  } else {
+    // An error occurred when trying to get certificate information
+    document.getElementById('lblExpirationDate').innerHTML = '<span class="ExpirationError">Unknown</span>';
+    document.getElementById('lblExpirationMessage').style['display'] = 'none';
+  }
 });
