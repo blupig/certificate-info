@@ -28,6 +28,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -134,7 +135,15 @@ var evOIDs = map[string]bool{
 }
 
 // Cache validation response by hostname
-var validationResultCache map[string]string
+type validationCacheEntry struct {
+	result      string
+	timeCreated time.Time
+}
+
+var (
+	validationResultCache = map[string]*validationCacheEntry{}
+	validationCacheMutex  = sync.RWMutex{}
+)
 
 // rootHandler handles requests to /
 func rootHandler(w http.ResponseWriter, r *http.Request) {
@@ -169,8 +178,11 @@ func validateHandler(w http.ResponseWriter, r *http.Request) {
 	result := ""
 
 	// Check cache
-	if v, ok := validationResultCache[hostname]; ok {
-		result = v
+	validationCacheMutex.RLock()
+	v, ok := validationResultCache[hostname]
+	validationCacheMutex.RUnlock()
+	if ok {
+		result = v.result
 	} else {
 		// Validate
 		resultMap := validateHost(hostname)
@@ -178,7 +190,12 @@ func validateHandler(w http.ResponseWriter, r *http.Request) {
 		result = string(marshalled)
 
 		// Cache response
-		validationResultCache[hostname] = result
+		validationCacheMutex.Lock()
+		validationResultCache[hostname] = &validationCacheEntry{
+			result:      result,
+			timeCreated: time.Now(),
+		}
+		validationCacheMutex.Unlock()
 	}
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, result)
@@ -329,15 +346,19 @@ func main() {
 		port = "8000"
 	}
 
-	// Initialize cache
-	validationResultCache = make(map[string]string)
-
 	// Purge cache periodically
-	purgeTimer := time.NewTicker(time.Hour * 8)
+	purgeTimer := time.NewTicker(1 * time.Minute)
 	go func() {
 		for {
 			<-purgeTimer.C
-			validationResultCache = make(map[string]string)
+
+			validationCacheMutex.Lock()
+			for k, v := range validationResultCache {
+				if time.Now().After(v.timeCreated.Add(5 * time.Minute)) {
+					delete(validationResultCache, k)
+				}
+			}
+			validationCacheMutex.Unlock()
 		}
 	}()
 
