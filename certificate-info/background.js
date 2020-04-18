@@ -18,7 +18,7 @@
 var colors = { '': '#888', 'gray': '#888', 'red': '#FF1744', 'orange': '#EF6C00' }
 
 // In-memory data store
-var cachedValidatonData = {};
+var cachedValidationData = {};
 var popupData = {};
 var currentTabId = 0;
 
@@ -29,6 +29,11 @@ const expirationWarningThresholdDays = 29;    // number of days before certifica
 
 // Update all tabs on start
 updateAllTabs();
+
+// Periodically delete cached data
+setInterval(function(){
+  cachedValidationData = {};
+}, 1000 * 60 * 5)
 
 // Perform update on all tabs
 function updateAllTabs() {
@@ -114,8 +119,8 @@ function updateTab(tab) {
     var hostname = extractHostname(url);
 
     // Display data if already fetched
-    if (hostname in cachedValidatonData) {
-      displayPageInfo(tabId, proto, false, cachedValidatonData[hostname])
+    if (hostname in cachedValidationData) {
+      displayPageInfo(tabId, proto, false, cachedValidationData[hostname])
       return;
     }
 
@@ -124,7 +129,7 @@ function updateTab(tab) {
     fetchCertInfo(hostname, function (data) {
       // Store response
       if (data !== null) {
-        cachedValidatonData[hostname] = data;
+        cachedValidationData[hostname] = data;
       }
       displayPageInfo(tabId, proto, false, data);
     })
@@ -207,7 +212,7 @@ function updatePopupData(tabId, data, color, validationResult, message) {
         popupData[tabId]['expiration_class'] = 'ExpirationError';
       } else if (expiration_days_until <= expirationWarningThresholdDays) {
         popupData[tabId]['expiration_class'] = 'ExpirationWarning';
-      } 
+      }
     }
   } else {
     popupData[tabId] = {};
