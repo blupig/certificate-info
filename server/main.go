@@ -216,6 +216,7 @@ func validateHost(hostname string) map[string]string {
 	issuerCommonName := ""
 	issuerOrganization := ""
 	notAfter := ""
+	notBefore := ""
 
 	// Add port number if not already
 	if !strings.Contains(hostname, ":") {
@@ -245,6 +246,7 @@ func validateHost(hostname string) map[string]string {
 		issuerCommonName = certInfo["issuer_common_name"]
 		issuerOrganization = certInfo["issuer_organization"]
 		notAfter = certInfo["not_after"]
+		notBefore = certInfo["not_before"]
 
 		// Validation level set to default (DV)
 		validationResult = "Domain Control Validation"
@@ -279,6 +281,7 @@ func validateHost(hostname string) map[string]string {
 		"issuer_organization":     issuerOrganization,
 		"result_color_hex":        resultColorHex,
 		"not_after":               notAfter,
+		"not_before":              notBefore,
 		"message":                 message,
 	}
 
@@ -295,8 +298,9 @@ func getCertInfo(cert *x509.Certificate) map[string]string {
 		"issuer_common_name":   "",
 		"issuer_organization":  "",
 		"not_after":            "",
+		"not_before":           "",
 	}
-
+	
 	subject := cert.Subject
 	subjectOrgs := subject.Organization
 	issuer := cert.Issuer
@@ -306,6 +310,7 @@ func getCertInfo(cert *x509.Certificate) map[string]string {
 	result["subject_common_name"] = subject.CommonName
 	result["issuer_common_name"] = issuer.CommonName
 	result["not_after"] = cert.NotAfter.Format(time.RFC3339)
+	result["not_before"] = cert.NotBefore.Format(time.RFC3339)
 
 	// Optional fields
 	if len(subjectOrgs) > 0 {
